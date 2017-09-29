@@ -253,7 +253,7 @@ plot_example(0.304, 0.354, 30.59, t2=0.254, p2=0.3385, l2=6.19, ylim = 5)
 
 
 
-##The threshold test model
+### The threshold test model
 
 
 In the model above the number of observations equals the number of stops. Since we have 4.5 million stops, it is intractable to naively estimate the posterior distribution of the parameters. So, instead of modeling the stop-level outcomes as Bernoulli varibables, we switch to an equivalent binomial parametrization, re-expressing the model in terms of the total number of searches ($S_{rd}$) and hits ($H_{rd}$) for drivers of each race in each department. For a given department $d$, race $r$, the generative model is as follows:
