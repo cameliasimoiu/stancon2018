@@ -18,7 +18,7 @@ rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores(), tikzDefaultEngine = 'xetex')
 theme_set(theme_light(base_size = 8))
 
-load("~/fast-threshold-test/stancon/north_carolina.RData")
+load('north_carolina.RData')
 ```
 
 
@@ -33,13 +33,43 @@ We find evidence of discrimination in these searches, and show that the theoreti
 
 ## Introduction
 
+
+
 More than 20 million Americans are stopped each year for tracffic violations, making this one of the most common ways in which the public interacts with the police (Langton and Durose, 2013). 
-During routine tracffic stops, officers have latitude to search both driver and vehicle for drugs, weapons, and other contraband when they suspect more serious criminal activity. 
-Few of these factors are typically avaialble to researchers, making it difficult to devise reliable statistical methods to to rigorously assess the manner and extent to which race plays a role in traffic stops (Epp et al., 2014)
- 
+During routine traffic stops, officers have latitude to search both driver and vehicle for drugs, weapons, and other contraband when they suspect more serious criminal activity.
+As a result, there have been concerns that racial bias plays a role in officers' decision.
+Claims of biased decision making, however, are typically hard to rigorously assess.
+This is in large part because of well-known problems with the two most common statistical tests for discrimination.
+
+In the first test, termed benchmarking, one compares the rate at which whites and minorities are searched.
+If minority drivers are searched more often than whites, that may be the result of bias against minorities.
+However, if minorities in reality are more likely to carry contraband or engage in illegal activities, then such disparities in search rates may simply reflect routine police work.
+This limitation of benchmarking is referred to in the literature as the qualified pool or denominator problem (Ayres, 2002), and is a
+specific instance of omitted variable bias.
+
+Addressing this shortcoming of benchmarking, Becker (1993, 1957) proposed the outcome test,
+which is based not on the rate at which search decisions are made, but on the success rate of those
+searches. 
+Becker argued that even if searches of minorities yield contraband less often than searches of whites, it suggests that the bar for searching minorities
+is lower, indicative of discrimination.
+
+Outcome tests, however, are imperfect barometers of bias. To see this, suppose that there
+are two, easily distinguishable types of white drivers: those who have a 1% chance of carrying
+contraband, and those who have a 75% chance. Similarly assume that black drivers have either a
+1% or 50% chance of carrying contraband. If ocers,
+in a race-neutral manner, search individuals
+who are at least 10% likely to be carrying contraband, then searches of whites will be successful 75%
+of the time whereas searches of blacks will be successful only 50% of the time. This simple example
+illustrates a subtle failure of outcome tests known as the problem of infra-marginality (Ayres, 2002),
+a phenomenon we discuss in detail below. Before doing that, we carry out the two standard tests for discrimination.
+
+To address the shortcomings of the outcome test, we built on Becker’s ideas to develop a more robust statistical measure of discrimination: the threshold test. The threshold test combines information on both search rates and hit rates, and lets us directly infer the standard of evidence officers require before carrying out a search. 
+
+
+
  
 
-###The Data
+##The Data
 
 We consider a dataset of 4.5 million stops conducted by the 100 largest local police departments (by number of recorded stops) in North Carolina.
 The data was obtained via a public records request filed with the state and includes the complete set of stops were conducted between January 2009 and December 2014 .
@@ -47,10 +77,11 @@ Several variables are recorded for each stop, including the race of the driver (
 Among this set of stops, 50% of drivers are white, 40% are black, 8.5% are Hispanic. 
 The overall search rate is 4.1%, and 29% of searches turn up contraband.
 
+
+
 ##Existing tests of discrimination
 
-The two most common statistical tests for discrimination, termed "benchmarking" and "outcome" suffer fro
-m well-known limitations.
+The two most common statistical tests for discrimination, termed "benchmarking" and "outcome" suffer from well-known limitations.
 
 ###Benchmarking test
 
@@ -76,13 +107,7 @@ plot_benchmark_test = function(obs) {
     theme(legend.title = element_blank(),
           legend.background = element_rect(fill = 'transparent'),
           panel.margin.x=unit(1.5, "cm")) +
-    guides(size=FALSE) + facet_grid( .~driver_race.y) + 
-     labs(x="",y="", 
-   title="",
-   caption = paste("This figure exhibits the number of deaths in each Vision Zero city",
-              "over the 2010 to 2015 sample period. Cities are arranged in increasing",
-              "order \nof population. The number of fatalities corresponds loosely",
-              "with population size."))
+    guides(size=FALSE) + facet_grid( .~driver_race.y)
 }
 
 plot_benchmark_test(stops)
@@ -125,6 +150,7 @@ plot_outcome_test = function(obs) {
 plot_outcome_test(stops)
 ```
 
+The aggregate results of the benchmark and outcome tests across all departments are given below:
 
 ```{r, warning = FALSE, message = FALSE}
 stops %>%
@@ -180,21 +206,6 @@ The threshold test can thus be seen as a hybrid between outcome and benchmark an
 
 
 
-<!-- It is easier in the blue group to distinguish between -->
-<!-- innocent and guilty individuals, as indicated by the signal distribution of the blue group having -->
-<!-- higher variance. Consequently, those who are searched in the blue group are more likely to be -->
-<!-- guilty than those who are searched in the red group, resulting in a higher hit rate for the blue -->
-<!-- group, throwing o↵ the outcome test. Similarly, it is easier in the blue group to identify low-risk -->
-<!-- individuals, who need not be searched, in turn lowering the overall search rate of the group and -->
-<!-- leading to spurious results from the benchmark test. In this example, the search and hit rates are -->
-<!-- poor proxies for the search thresholds -->
-
-
-
-
-
-
-
 
 
 ###Computation
@@ -205,17 +216,23 @@ In the model above the number of observations equals the number of stops. Since 
 We observe $N_{rd}$ stops 
 
 $S_{rd} = \sum_{i=1}^N S_i$  
+
 $H_{rd} = \sum_{i=1}^N H_i$
+
 $x_{rd} ~ Beta ( \phi_{rd}, \lambda_{rd} )$
+
 $\delta_{rd} = P ( x_{rd}  > trd  ;  \phi_{rd}, \lambda_{rd} )$
+
 $\gamma_{rd} = E ( x_{rd} | x_{rd} > t_{rd}; \phi_{rd}, \lambda_{rd} )$
+
 $S_{rd} = Binomial( \delta_{rd} , N_{rd} )$
+
 $H_{rd} = Binomial( \gamma_{rd} , S_{rd} )$
 
 
-We next use our threshold test to infer race- and department-specific search thresholds. 
-Given the observed data, we estimate the posterior distribution of the search thresholds via Hamiltonian Monte Carlo (HMC) sampling (Neal, 1994; Duane et al., 1987), a form of Markov chain Monte Carlo sampling (Metropolis et al., 1953).
-We sampled five Markov chains of 1,000 iterations (with the first half for warmup) in parallel, and found this was sucient for convergence, as indicated by $\hat{R}$ values less than 1.05 for all parameters.
+We next use our threshold test to infer race- and department-specific search thresholds using the model outlined below. 
+Given the observed data, we estimate the posterior distribution of the search thresholds via Hamiltonian Monte Carlo (HMC) sampling (Neal, 1994; Duane et al., 1987), a form of Markov chain Monte Carlo sampling.
+We sample five Markov chains of 1,000 iterations (with the first half for warmup) in parallel, and found this was sucient for convergence, as indicated by $\hat{R}$ values less than 1.05 for all parameters.
 
 
 
@@ -322,15 +339,12 @@ fit <- sampling(model, data = stan_data, iter=5000, init = 'random', chains=5, c
 
 
 post = rstan::extract(fit)
-s = summary(fit)
-Rhat = max(s$summary[,'Rhat'], na.rm = TRUE)
 ```
 
 
-Figure 5 displays the average, state-wide inferred signal distributions and thresholds for whites, blacks, Hispanics. 
+The figure below displays the department-level thresholds for whites, blacks, Hispanics. 
 These averages are computed by weighting the department-level results by the number of stops in the department. 
-Specifically, the overall race-specific threshold tr is given by (P d trd · nd) / P d nd, where nd is the number of stops in department d. Similarly, the aggregate signal distributions show the department-weighted distribution of probabilities of possessing contraband. As is visually apparent, and also summarized in Table 2, the inferred thresholds for searching whites (15%) and Asians (13%) are significantly higher than the inferred thresholds for searching blacks (7%) and Hispanics (6%). 
-These thresholds are estimated to about ±2%, as indicated by the 95% credible intervals listed in Table 2.
+
 
 
 ```{r threshold_test, warning = FALSE, message = FALSE, fig.width=8, fig.height=4}
@@ -362,59 +376,6 @@ plot_department_thresholds(stops, post)
 
 
 
-```{r signal, warning = FALSE, message = FALSE, fig.width=5, fig.height=5}
-plot_signal <- function(obs, post, obs_mask = NULL, xlim = c(0,0.5), ymax = 5) {
-  if (is.null(obs_mask)) {
-    obs_mask = rep(TRUE, nrow(obs))
-  }
-  obs = obs[obs_mask,]
-  races = levels(obs$driver_race)  
-  
-  x = seq(0.0001, 0.9999, 0.0001)
-  
-  phi = colMeans(post$phi)[obs_mask]
-  lambda = colMeans(post$lambda)[obs_mask]
-  
-  obs$thresholds = colMeans(post$t_i)[obs_mask]
-  thresh = obs %>% group_by(police_department) %>%
-    mutate(dept_stops = sum(num_stops)) %>% ungroup() %>%
-    group_by(driver_race) %>% 
-    summarise(threshold = weighted.mean(thresholds, dept_stops))
-  
-  y = sapply(1:length(phi), function(i) obs$num_stops[i]*dbeta(x, phi[i]*lambda[i], (1-phi[i])*lambda[i])) 
-  colnames(y) = obs$driver_race
-  
-  df = cbind(melt(y),x)
-  names(df) <- c('X1', 'race', 'value', 'x')
-  
-  df <- df %>%
-    mutate(race = factor(race, levels = races)) %>%
-    group_by(race, x) %>%
-    summarise(value = sum(value)) %>%
-    left_join(thresh) %>% left_join(obs %>% group_by(race) %>% summarise(num_stops = sum(num_stops))) %>%
-    group_by(race) %>%
-    mutate(value = value / num_stops) %>%
-    as.data.frame()
-
-  ylim=c(0,ymax)
-  colors = c('blue', 'black', 'red','green4')
-  names(colors) = races
-  print(levels(df$race))
-  
-  ggplot(data=df, aes(x=x, y=value, color=race)) + geom_line() +
-    geom_vline(aes(xintercept = threshold, color=race), linetype="dashed", show.legend=FALSE)+   
-  scale_x_continuous('\nLikelihood of carrying contraband', limits=xlim, labels=percent, expand = c(0, 0)) +
-  scale_y_continuous('Density\n', limits=c(0,ymax), expand = c(0, 0)) + 
-  scale_color_manual(values = colors) +
-  theme(legend.position=c(.95,.95),
-        legend.justification=c(1,1),
-        legend.title=element_blank(), 
-        legend.background = element_rect(fill = 'transparent'))
-}
-
-plot_signal(stops, post, ymax = 3)
-```
-
 
 
 ###Posterior Predictive Checks
@@ -423,11 +384,12 @@ We investigate the extent to which the fitted model yields race- and department-
 Specifically, for each department and race group, we compare the observed search and hit rates to their expected values under the assumed data-generating process with parameters drawn from the inferred posterior distribution.
 During model inference, our Markov chain Monte Carlo sampling procedure yields 2,500 draws from the joint posterior
 distribution of the parameters. 
-For each parameter draw, we analytically compute the resulting search and hit rates and average these search over the 2,500 posterior draws.
-Figure 7 compares the model-predicted search and hit rates to the actual, observed values and indicates that the fitted model recovers the observed search rates almost perfectly across races and departments. 
+For each parameter draw, we analytically compute the resulting search and hit rates and average these over the 2,500 posterior draws.
+The figures below  compare the model-predicted search and hit rates to the actual, observed values and indicates that the fitted model recovers the observed search rates almost perfectly across races and departments. 
 
 
 ```{r posterior_predictive_checks, warning = FALSE, message = FALSE, fig.width=8, fig.height=4}
+
 
 search_rate_ppc <- function(obs, post, ylim = 0.03) {
   obs$pred_search_rate = colMeans(post$search_rate)
@@ -466,41 +428,11 @@ hit_rate_ppc(stops, post)
 
 
 
-###Infra-marginality in the wild: Raleigh, NC
-
-Why is it that the threshold test shows consistent discrimination against blacks and Hispanics when benchmark and outcome analysis suggest a more ambiguous story?
-To understand this dissonance, we examine the specific case of the Raleigh Police Department, the second largest department in North Carolina by number of stops recorded. 
-The benchmark and outcome tests yield conflicting assessments of whether black drivers face discrimination. 
-Black drivers in Raleigh are searched at a higher rate than whites (4% vs. 2%), but when searched, blacks are also found to have contraband at a higher rate (16% vs. 13%). 
-Figure 6 shows the inferred signal distributions and thresholds for white and black drivers in Raleigh, and sheds light on these seemingly contradictory results. 
-
-
-
-```{r raleigh_plot, warning = FALSE, message = FALSE, fig.width=8, fig.height=4}
-plot_signal(stops, post,
-                   obs$driver_race %in% c('Black', 'White') & obs$police_department == 'Raleigh Police Department',
-                   ymax = 1)
-```
-
-
-The signal distribution for black drivers has a heavier right tail—for example, there is four times more mass above 20% than in the white distribution.
-This suggests that ocers can more easily determine which black drivers are carrying contraband, which causes their searches of blacks to be more successful than their searches of whites. 
-In spite of the higher hit rate for black drivers, we find that blacks still face a lower search threshold (6%) than whites (9%), suggesting discrimination against blacks.
-
-
-```{r raleigh_table, warning = FALSE, message = FALSE}
-print(format(stops %>% 
-               filter(police_department == 'Raleigh Police Department') %>%
-               mutate(search_rate = 100*search_rate,
-                  hit_rate = 100*hit_rate,
-                  threshold = 100*t) %>%
-         dplyr::select(driver_race, search_rate, hit_rate, threshold), digits = 3))
-```
-
 
 ### Conclusions
 
-Theoretical limitations with the two most widely used tests for discrimination—the benchmark and outcome tests—have hindered investigations of bias. Addressing this challenge, we have developed a new statistical approach to detecting discrimination that builds on the strengths of the benchmark and outcome tests and that mitigates the shortcomings of both. On a dataset of 4.5 million motor vehicle stops in North Carolina, our threshold test suggests that black and Hispanic motorists face discrimination in search decisions. Further, by specifically examining the Raleigh Police Department, we find that the problem of infra-marginality appears to be more than a theoretical possibility, and may have caused the outcome test to mistakenly conclude that officers discriminated against white drivers.
+Theoretical limitations with the two most widely used tests for discrimination—the benchmark and outcome tests—have hindered investigations of bias. Addressing this challenge, we have developed a new statistical approach to detecting discrimination that builds on the strengths of the benchmark and outcome tests and that mitigates the shortcomings of both. 
+On a dataset of 4.5 million motor vehicle stops in North Carolina, our threshold test suggests that black and Hispanic motorists face discrimination in search decisions. Further, by specifically examining the Raleigh Police Department, we find that the problem of infra-marginality appears to be more than a theoretical possibility, and may have caused the outcome test to mistakenly conclude that officers discriminated against white drivers.
 
 We have checked robustness to reasonable violations of the model assumptions, including noise in estimates of the likelihood a driver is carrying contraband. 
 We have also attempted to rule out some of the more obvious legitimate reasons for which thresholds might vary, including search policies that differ across department, year, or time of day. 
