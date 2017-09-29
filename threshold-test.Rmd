@@ -23,7 +23,7 @@ load('north_carolina.RData')
 
 
 Claims of biased decision making occur in many disciplines, including lending, hiring, and policing. However, it is typically difficult to rigorously assess these claims. 
-This in large part because of well-known problems with the two most common statistical tests for discrimination: bencharking and outcome tests. 
+This in large part because of well-known problems with the two most common statistical tests for discrimination: benchmarking and outcome tests. 
 We develop a new statistical test of discrimination --- the "threshold test", that mitigates some of the problems affecting existing tests. Our test uses a hierarchical latent Bayesian model to jointly estimate the decision thresholds applied by decision makers, and the risk distributions for different populations. 
 We apply our test to a dataset of 4.5 million police stops in North Carolina, where we investigate whether officers apply lower standards of evidence when searching minorities than when searching whites. 
 We find evidence of discrimination in these searches, and show that the theoretical problems with the existing tests can cause erroneous results in practice.
@@ -35,9 +35,9 @@ We find evidence of discrimination in these searches, and show that the theoreti
 
 
 
-More than 20 million Americans are stopped each year for tracffic violations, making this one of the most common ways in which the public interacts with the police (Langton and Durose, 2013). 
+More than 20 million Americans are stopped each year for traffic violations, making this one of the most common ways in which the public interacts with the police (Langton and Durose, 2013). 
 During routine traffic stops, officers have latitude to search both driver and vehicle for drugs, weapons, and other contraband when they suspect more serious criminal activity.
-As a result, there have been concerns that racial bias plays a role in officers' decision.
+As a result, there have been concerns that racial bias plays a role in officers’' decision.
 Claims of biased decision making, however, are typically hard to rigorously assess.
 This is in large part because of well-known problems with the two most common statistical tests for discrimination.
 
@@ -88,7 +88,7 @@ The two most common statistical tests for discrimination, termed "benchmarking" 
 A large body of work makes use of benchmark tests to assess racial bias in police stops and searches. The benchmark test compares, for each group of interest, the rate at which a decision is made relative to some benchmark.
 For example, bias in search decisions could be investigated by determining whether, conditional on being pulled over, minority drivers are searched more often than white drivers. 
 Higher search rates for minorities would suggest discrimination.
-In Figure 1 below, we see that this is the case for the largest 100 departments in North Carolina. 
+In the figure below, we see that this is the case for the largest 100 departments in North Carolina. 
 
 
 ```{r benchmark_test, warning = FALSE, message = FALSE, fig.width=8, fig.height=4}
@@ -167,7 +167,7 @@ stops %>%
 
 ## The problem of Infra-marginality
 
-The outcome test is intuitively appealing, however, it is also an imperfect barrometer of bias. 
+The outcome test is intuitively appealing, however, it is also an imperfect barometer of bias. 
 In particular, it is known to suffer from the problem of infra-marginality (Anwar and Fang, 2006; Ayres, 2002): even absent discrimination, the search success rates for minority and white drivers might differ if the two groups have different risk distributions. 
 Thus, at least in theory, outcome tests can fail to accurately detect discrimination. 
 
@@ -178,20 +178,6 @@ We assume that the officer observes noisy but informative signals about whether 
 These might include age, gender, race, contextual information such as location, time of day, any odours, and behavioural cues such as signs of evasiveness or nervousness, etc. 
 The officer then uses this information to estimate the probability that the driver is carrying contraband, and conducts a search when that probability exceeds a fixed, race-specific search threshold $t_{r}$. 
 Under this model, if officers have a lower threshold for searching blacks than whites (i.e., $t_{black} < t_{white}$) we would say that black drivers are being discriminated against.
-
-More formally, let us assume that an officer in department $d$ stops a driver of race $r$.
-
-For any stop $i$, the officer observes a random signal: 
-
-$x_i \sim Beta(\phi_{rd} , \delta_{rd})$
-
-and deterministically conducts search if their estimated probability exceeds the race and department-specific search threshold $t_{rd}$. 
-
-$S_i = 1$ iff $x_i > t_{rd}$
- 
-If a search is conducted, $S_i = 1$, contraband is found with probability $x$:
-
-$H_i \sim Bernoulli(x_i)$
 
 We model the search thresholds and signal distribution parameters as latent variables. During inference the aim is to find posterior estimates of these variables that best explain the observed search and hit rates in every department for drivers of each race. 
 The threshold test can thus be seen as a hybrid between outcome and benchmark analysis, examining both the rate at which searches occur and the success rate of these searches.
@@ -258,30 +244,19 @@ plot_example(0.304, 0.354, 30.59, t2=0.254, p2=0.3385, l2=6.19, ylim = 5)
 
 In the model above the number of observations equals the number of stops. Since we have 4.5 million stops, it is intractable to naively estimate the posterior distribution of the parameters. So, instead of modeling the stop-level outcomes as Bernoulli varibables, we switch to an equivalent binomial parametrization, re-expressing the model in terms of the total number of searches ($S_{rd}$) and hits ($H_{rd}$) for drivers of each race in each department. For a given department $d$, race $r$, the generative model is as follows:
 
-We observe $N_{rd}$ stops 
+For each stop $i$ with driver race $r$, and department $d$, we observe $N_{rd}$ stops
 
 $S_{rd} = \sum_{i=1}^N S_i$  
 
 $H_{rd} = \sum_{i=1}^N H_i$
 
-$x_{rd} ~ Beta ( \phi_{rd}, \lambda_{rd} )$
+The officer observes a random signal drawn from a race and department specific discriminant distribution (Pierson et. al, 2017),  and deterministically conducts search if their estimated probability exceeds the race and department-specific search threshold $t_{rd}$. 
 
-$\delta_{rd} = P ( x_{rd}  > t_{rd}  ;  \phi_{rd}, \lambda_{rd} )$
+$S_i = 1$ iff $x_i > t_{rd}$
+ 
+If a search is conducted, $S_i = 1$, contraband is found with probability $x$:
 
-$\gamma_{rd} = E ( x_{rd} | x_{rd} > t_{rd}; \phi_{rd}, \lambda_{rd} )$
-
-$S_{rd} = Binomial( \delta_{rd} , N_{rd} )$
-
-$H_{rd} = Binomial( \gamma_{rd} , S_{rd} )$
-
-where 
-
-$\delta_i =$ exp$(\delta_r + \delta_d)$
-
-
-$\phi_i =$ logit$^{-1}(\phi_r + \phi_d)$
-
-and place weak priors on the race-department parameters.
+$H_i \sim Bernoulli(x_i)$
     
 We next use our threshold test to infer race- and department-specific search thresholds using the model outlined below. 
 Given the observed data, we estimate the posterior distribution of the search thresholds via Hamiltonian Monte Carlo (HMC) sampling.
@@ -519,4 +494,10 @@ Economy, pages 385–409, 1993
 
 Andrew Gelman, Xiao-Li Meng, and Hal Stern. Posterior predictive assessment of model fitness
 via realized discrepancies. Statistica Sinica, 6(4):733–760, 1996
+
+Pierson, Emma, Sam Corbett-Davies, and Sharad Goel. "Fast threshold tests for detecting discrimination.", 2017.
+
+Simoiu, Camelia, Sam Corbett-Davies, and Sharad Goel. The problem of infra-marginality in outcome tests for discrimination, 2017.
+
+
 
