@@ -244,7 +244,7 @@ plot_example(0.304, 0.354, 30.59, t2=0.254, p2=0.3385, l2=6.19, ylim = 5)
 
 In the model above the number of observations equals the number of stops. Since we have 4.5 million stops, it is intractable to naively estimate the posterior distribution of the parameters. So, instead of modeling the stop-level outcomes as Bernoulli varibables, we switch to an equivalent binomial parametrization, re-expressing the model in terms of the total number of searches ($S_{rd}$) and hits ($H_{rd}$) for drivers of each race in each department. For a given department $d$, race $r$, the generative model is as follows:
 
-For each stop $i$ with driver race $r$, and department $d$, we observe $N_{rd}$ stops
+For each driver race $r$, and department $d$, we observe $N_{rd}$ stops
 
 $S_{rd} = \sum_{i=1}^N S_i$  
 
@@ -257,7 +257,7 @@ $S_i = 1$ iff $x_i > t_{rd}$
 If a search is conducted, $S_i = 1$, contraband is found with probability $x$:
 
 $H_i \sim Bernoulli(x_i)$
-    
+
 We next use our threshold test to infer race- and department-specific search thresholds using the model outlined below. 
 Given the observed data, we estimate the posterior distribution of the search thresholds via Hamiltonian Monte Carlo (HMC) sampling.
 We sample five Markov chains of 1,000 iterations (with the first half for warmup) in parallel, and found this was sucient for convergence, as indicated by $\hat{R}$ values less than 1.05 for all parameters.
