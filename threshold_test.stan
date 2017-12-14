@@ -1,5 +1,3 @@
-# normal_cdf(y, mu, sigma)
-
 data {
   int<lower=1> N; // number of observations
   int<lower=1> R; // number of suspect races
@@ -18,7 +16,8 @@ parameters {
   real<lower=0> sigma_t; #standard deviation for the normal the thresholds are drawn from. 
   
   // search thresholds
-  vector[N] t_i;
+  vector[R] t_r;
+  vector[N] t_i_raw;
   
   // parameters for signal distribution
   vector[R] phi_r;
@@ -35,6 +34,7 @@ transformed parameters {
   vector[D] delta_d;
   vector[N] phi;
   vector[N] delta;
+  vector[N] t_i;
   vector<lower=0, upper=1>[N] search_rate;
   vector<lower=0, upper=1>[N] hit_rate;
   real successful_search_rate;
@@ -45,7 +45,10 @@ transformed parameters {
   delta_d[1]   = 0;
   delta_d[2:D] = delta_d_raw;
   
+  t_i = t_r[r] + t_i_raw * sigma_t;
+  
   for (i in 1:N) {	
+    
     // phi is the fraction of people of race r, d who are guilty (ie, carrying contraband)
     phi[i]    = inv_logit(phi_r[r[i]] + phi_d[d[i]]);
     
@@ -67,17 +70,16 @@ model {
   mu_phi ~ normal(0, 1);
   mu_delta ~ normal(0, 1);
   
-  phi_r    ~ normal(mu_phi, 1);
-  delta_r ~ normal(mu_delta, 1);
+  phi_r    ~ normal(mu_phi, .1);
+  delta_r ~ normal(mu_delta, .1);
+  t_r ~ normal(0, 1);
   
   // Draw department parameters (for un-pinned departments)
   phi_d_raw    ~ normal(0, .1);   
   delta_d_raw ~ normal(0, .1);    
   //thresholds
-  t_i ~ normal(0, sigma_t);
+  t_i_raw ~ normal(0, 1);
 
   s ~ binomial(n, search_rate);
   h ~ binomial(s, hit_rate);
 }
-
-generated quantities {}
