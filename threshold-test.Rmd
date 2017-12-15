@@ -511,9 +511,9 @@ Finally, we check convergence of the model fit by inspecting Rhat and the number
 
 ```{r convergence, warning = FALSE,  message = FALSE, fig.width=8, fig.height=4}
 s <- summary(fit)
-Rhat <- max(s$summary[,'Rhat'], na.rm = T)
-n_eff <- min(s$summary[,'n_eff'])
-summary(Rhat)
+Rhat <- s$summary[,'Rhat']
+n_eff <- s$summary[,'n_eff']
+summary(Rhat, na.rm=T)
 summary(n_eff)
 ```
 
